@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мои траты</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#ffffff);
+  --tx:var(--tg-theme-text-color,#14171f);
+  --hint:var(--tg-theme-hint-color,#7a8190);
+  --card:var(--tg-theme-secondary-bg-color,#f1f3f7);
+  --acc:var(--tg-theme-button-color,#2f6bff);
+  --acct:var(--tg-theme-button-text-color,#ffffff);
+  --bad:#e5484d;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);padding:16px 16px 92px;padding-top:max(16px,env(safe-area-inset-top));font-size:16px;line-height:1.4}
+h2{font-size:18px;margin:22px 0 10px}
+.hero{padding:6px 0 18px}
+.hero small{color:var(--hint);font-size:14px}
+.hero .big{font-size:48px;font-weight:800;letter-spacing:-1.5px;line-height:1.1}
+.hero .big.neg{color:var(--bad)}
+.bar{height:10px;background:var(--card);border-radius:6px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:6px;transition:width .4s}
+.bar i.over{background:var(--bad)}
+.card{background:var(--card);border-radius:14px;padding:14px}
+input,select{width:100%;font:inherit;color:var(--tx);background:var(--card);border:2px solid transparent;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+input:focus,select:focus{outline:none;border-color:var(--acc)}
+input.amount{font-size:28px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{border:2px solid transparent;background:var(--card);color:var(--tx);font:inherit;padding:8px 12px;border-radius:20px;cursor:pointer}
+.chip.on{border-color:var(--acc);font-weight:600}
+button.main{width:100%;font:inherit;font-weight:700;background:var(--acc);color:var(--acct);border:0;border-radius:12px;padding:14px;cursor:pointer}
+button.small{font:inherit;font-size:14px;background:var(--card);color:var(--tx);border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+button:focus-visible,.chip:focus-visible,.tab:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--card)}
+.row:last-child{border:0}
+.row .ic{font-size:24px;width:36px;text-align:center}
+.row .mid{flex:1;min-width:0}
+.row .mid b{display:block;font-weight:600}
+.row .mid span{color:var(--hint);font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .sum{font-weight:700;white-space:nowrap}
+.del{background:none;border:0;color:var(--hint);font-size:20px;cursor:pointer;padding:4px 8px}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--bg);border-top:1px solid var(--card);padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;background:none;border:0;color:var(--hint);font:inherit;font-size:12px;padding:10px 0 8px;cursor:pointer}
+.tab span{display:block;font-size:22px}
+.tab.on{color:var(--acc);font-weight:700}
+.seg{display:flex;gap:6px;margin-bottom:12px}
+.seg .chip{flex:1;text-align:center}
+.tip{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.tip b{display:block}
+.empty{color:var(--hint);text-align:center;padding:28px 10px}
+canvas{max-height:260px}
+.hide{display:none}
+label{font-size:14px;color:var(--hint);display:block;margin:4px 0 4px}
+</style>
+</head>
+<body>
+
+<!-- ДОБАВИТЬ -->
+<section id="v-add">
+  <div class="hero">
+    <small id="heroLabel">Осталось на эту неделю</small>
+    <div class="big" id="heroNum">0</div>
+    <div class="bar"><i id="heroBar" style="width:0"></i></div>
+  </div>
+  <input id="amount" class="amount" type="text" inputmode="decimal" placeholder="Сумма" aria-label="Сумма">
+  <div class="chips" id="cats"></div>
+  <input id="note" type="text" maxlength="40" placeholder="Заметка (необязательно)">
+  <input id="date" type="date">
+  <button class="main" id="saveBtn">Сохранить расход</button>
+</section>
+
+<!-- ИСТОРИЯ -->
+<section id="v-list" class="hide">
+  <h2 style="margin-top:6px">История</h2>
+  <div id="list"></div>
+</section>
+
+<!-- АНАЛИЗ -->
+<section id="v-stats" class="hide">
+  <h2 style="margin-top:6px">На что уходят
